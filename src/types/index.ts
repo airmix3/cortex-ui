@@ -27,6 +27,8 @@ export interface Mission {
   attempts?: number;
   blocker?: string;
   age?: string; // e.g. "3h", "45m", "1d"
+  linkedEscalationId?: string;   // cross-reference to active escalation
+  linkedEscalationLevel?: 'L1' | 'L2' | 'L3' | 'L4';
 }
 
 export interface Department {
@@ -79,6 +81,10 @@ export interface Employee {
   tasksCompleted: number;
   joinedAt: string;
   memoryNamespace: string;
+  // ── Cross-reference fields ──
+  currentMissionId?: string;
+  currentMissionTitle?: string;
+  linkedEscalationId?: string;
 }
 
 export interface Escalation {
@@ -97,6 +103,13 @@ export interface Escalation {
   createdAt: string;
   department: string;
   taskId?: string;
+  // ── Cross-reference fields ──
+  linkedMissionId?: string;
+  linkedMissionTitle?: string;
+  linkedMissionPriority?: 'critical' | 'high' | 'medium' | 'low';
+  blockedAgentIds?: string[];   // Employee.id refs
+  skillGap?: string;            // e.g. "AWS Infrastructure · Cloud Ops"
+  financialImpact?: string;     // e.g. "$5K delay + $0.12/hr GPU cost"
 }
 
 export interface VaultEntry {

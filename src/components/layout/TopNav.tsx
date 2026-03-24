@@ -1,78 +1,176 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Brain, HelpCircle, Bell, Settings } from 'lucide-react';
+import { HelpCircle, Bell, Settings, Search, Target, LayoutGrid, Moon } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useSettings, type LayoutPreset } from '@/contexts/SettingsContext';
 
-const navLinks = [
-  { label: 'Home', href: '/' },
-  { label: 'Tamir', href: '/tamir' },
-  { label: 'Control Center', href: '/control-center' },
-  { label: 'Missions', href: '/missions' },
-  { label: 'People', href: '/people' },
-  { label: 'Departments', href: '/departments' },
-  { label: 'Vault', href: '/vault' },
-  { label: 'Escalations', href: '/escalations' },
-  { label: 'Timeline', href: '/timeline' },
-  { label: 'Terminal', href: '/terminal' },
-  { label: 'Collaboration', href: '/collaboration' },
-  { label: 'Evaluations', href: '/evaluations' },
-];
+// ── Derive page title from pathname ──────────────────────────────────────────
 
-export default function TopNav() {
+const PAGE_TITLES: Record<string, string> = {
+  '/':                 'Home',
+  '/tamir':            'CEO Desk',
+  '/tamir/calendar':   'Calendar',
+  '/tamir/inbox':      'Inbox',
+  '/tamir/think':        'Think',
+  '/tamir/deliverables': 'Deliverables',
+  '/tools':            'Tools',
+  '/control-center':   'Control Center',
+  '/missions':         'Missions',
+  '/people':           'People',
+  '/vault':            'Vault',
+  '/escalations':      'Escalations',
+  '/timeline':         'Timeline',
+  '/terminal':         'Terminal',
+  '/evaluations':      'Evaluations',
+  '/skills':           'Skills',
+  '/workspace':        'Workspace',
+  '/settings':         'Settings',
+};
+
+function getPageTitle(pathname: string): string {
+  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
+  if (pathname.startsWith('/agents/')) return 'Agent Profile';
+  return 'Myelin';
+}
+
+// ── Layout preset quick-toggle ────────────────────────────────────────────────
+
+const PRESET_ICONS: Record<LayoutPreset, React.ElementType> = {
+  overview:   LayoutGrid,
+  focus:      Target,
+  'deep-work': Moon,
+};
+
+const PRESET_COLORS: Record<LayoutPreset, string> = {
+  overview:   '#38bdf8',
+  focus:      '#f59e0b',
+  'deep-work': '#a78bfa',
+};
+
+const PRESET_CYCLE: LayoutPreset[] = ['overview', 'focus', 'deep-work'];
+
+function PresetToggle() {
+  const { layoutPreset, setLayoutPreset } = useSettings();
+  const Icon = PRESET_ICONS[layoutPreset];
+  const color = PRESET_COLORS[layoutPreset];
+
+  const cycleNext = () => {
+    const idx = PRESET_CYCLE.indexOf(layoutPreset);
+    const next = PRESET_CYCLE[(idx + 1) % PRESET_CYCLE.length];
+    setLayoutPreset(next);
+  };
+
+  const labels: Record<LayoutPreset, string> = {
+    overview:    'Overview',
+    focus:       'Focus',
+    'deep-work': 'Deep Work',
+  };
+
+  return (
+    <motion.button
+      onClick={cycleNext}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
+      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer"
+      style={{
+        color,
+        background: `${color}10`,
+        border: `1px solid ${color}25`,
+      }}
+      title="Click to cycle layout preset"
+    >
+      <Icon size={11} />
+      <span>{labels[layoutPreset]}</span>
+    </motion.button>
+  );
+}
+
+// ── TopNav — compact context bar ─────────────────────────────────────────────
+
+interface TopNavProps {
+  onOpenPalette?: () => void;
+}
+
+export default function TopNav({ onOpenPalette }: TopNavProps) {
   const pathname = usePathname();
+  const title = getPageTitle(pathname);
+
+  const openPalette = () => {
+    if (onOpenPalette) {
+      onOpenPalette();
+    } else {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
+    }
+  };
 
   return (
     <motion.nav
-      initial={{ opacity: 0, y: -12 }}
+      initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="flex items-center justify-between px-6 py-2.5 relative z-20 shrink-0 glass-deep glass-shimmer"
-      style={{ backdropFilter: 'blur(28px) saturate(160%) brightness(1.12)', WebkitBackdropFilter: 'blur(28px) saturate(160%) brightness(1.12)' }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="flex items-center justify-between px-5 py-1.5 relative z-20 shrink-0"
+      style={{
+        height: 44,
+        background: 'rgba(6,10,19,0.6)',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        backdropFilter: 'blur(16px) saturate(140%)',
+        WebkitBackdropFilter: 'blur(16px) saturate(140%)',
+      }}
     >
-      <div className="flex items-center gap-6">
-        <Link href="/" className="flex items-center gap-2.5">
-          <Brain className="w-7 h-7 text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.6)]" />
-          <span className="text-lg font-bold tracking-tight text-white">Myelin</span>
-        </Link>
-        <div className="flex items-center">
-          {navLinks.map((link, i) => {
-            const isActive = pathname === link.href;
-            return (
-              <div key={link.label} className="flex items-center">
-                <Link
-                  href={link.href}
-                  className={`relative px-3 py-1.5 text-[13px] font-medium transition-colors ${
-                    isActive
-                      ? 'text-white'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {link.label}
-                  {isActive && (
-                    <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.8)]" />
-                  )}
-                </Link>
-                {i < navLinks.length - 1 && (
-                  <span className="text-slate-700 mx-0.5">|</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* Page title */}
       <div className="flex items-center gap-2">
-        <button className="p-2 text-slate-400 hover:text-slate-200 rounded-lg transition-all hover:bg-white/8 hover:backdrop-blur-sm hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
-          <HelpCircle className="w-5 h-5" />
+        <h1 className="text-[14px] font-semibold text-white">{title}</h1>
+      </div>
+
+      {/* Right-side actions */}
+      <div className="flex items-center gap-2">
+        {/* Layout preset quick-toggle — only show on home */}
+        {pathname === '/' && <PresetToggle />}
+
+        {/* ⌘K pill */}
+        <button
+          onClick={openPalette}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer"
+          style={{
+            color: '#64748b',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.07)',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8';
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.12)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.color = '#64748b';
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.07)';
+          }}
+        >
+          <Search className="w-3 h-3" />
+          <span>Search & act</span>
+          <kbd
+            className="ml-0.5 px-1 py-0.5 rounded text-[9px] font-mono"
+            style={{ background: 'rgba(255,255,255,0.06)', color: '#475569' }}
+          >
+            ⌘K
+          </kbd>
         </button>
-        <button className="relative p-2 text-slate-400 hover:text-slate-200 rounded-lg transition-all hover:bg-white/8 hover:backdrop-blur-sm hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full" />
+
+        <div className="w-px h-4 bg-white/[0.06]" />
+
+        <button className="p-1.5 text-slate-500 hover:text-slate-300 rounded-lg transition-all hover:bg-white/[0.04] cursor-pointer">
+          <HelpCircle className="w-4 h-4" />
         </button>
-        <button className="p-2 text-slate-400 hover:text-slate-200 rounded-lg transition-all hover:bg-white/8 hover:backdrop-blur-sm hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
-          <Settings className="w-5 h-5" />
+        <button className="relative p-1.5 text-slate-500 hover:text-slate-300 rounded-lg transition-all hover:bg-white/[0.04] cursor-pointer">
+          <Bell className="w-4 h-4" />
+          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-rose-500 rounded-full" />
         </button>
+        <Link href="/settings">
+          <button className="p-1.5 text-slate-500 hover:text-slate-300 rounded-lg transition-all hover:bg-white/[0.04] cursor-pointer">
+            <Settings className="w-4 h-4" />
+          </button>
+        </Link>
       </div>
     </motion.nav>
   );

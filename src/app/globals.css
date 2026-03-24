@@ -450,3 +450,16 @@ body {
   border-left: 2px solid rgba(56, 189, 248, 0.15);
   animation: commandAccent 4s ease-in-out infinite;
 }
+
+/* === SKILL NEXUS ANIMATIONS === */
+
+@keyframes coreBreath {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.04); opacity: 0.85; }
+}
+
+@keyframes nodeFlash {
+  0% { transform: scale(1); filter: brightness(1); }
+  40% { transform: scale(1.5); filter: brightness(2.5); }
+  100% { transform: scale(1); filter: brightness(1); }
+}

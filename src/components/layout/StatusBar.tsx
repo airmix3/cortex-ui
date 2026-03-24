@@ -2,7 +2,9 @@
 
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { Bot, Zap, CheckSquare, FileOutput, ShieldCheck, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
+import { Bot, Zap, CheckSquare, FileOutput, ShieldCheck, RefreshCw, SlidersHorizontal } from 'lucide-react';
+import { useSettings } from '@/contexts/SettingsContext';
 
 // ─── ANIMATED NUMBER ───
 
@@ -42,102 +44,163 @@ function LiveSyncBadge() {
 
 const burnBars = [4, 6, 5, 8, 7, 9, 7, 8, 10, 9, 11, 10];
 
-// ─── METRICS ───
-
-const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
-const pill = {
-  hidden: { opacity: 0, y: 8 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
-};
+// ─── METRIC RENDERERS ─────────────────────────────────────────────────────────
 
 const glassBase: React.CSSProperties = {
   backdropFilter: 'blur(12px) saturate(140%) brightness(1.05)',
   WebkitBackdropFilter: 'blur(12px) saturate(140%) brightness(1.05)',
 };
 
-export default function StatusBar() {
+const pill = {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
+};
+
+function MetricAgents() {
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="px-6 py-2 relative z-10">
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+    <motion.div
+      variants={pill}
+      className="flex items-center gap-2.5 px-3.5 py-2 rounded-full glass-pill flex-shrink-0 whitespace-nowrap"
+      style={{ ...glassBase, border: '1px solid rgba(52,211,153,0.18)' }}
+    >
+      <Bot className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+      <span className="text-xs text-slate-400">Agents</span>
+      <span className="text-sm font-bold text-emerald-400">9</span>
+      <span className="text-xs text-slate-600">/</span>
+      <span className="text-xs text-slate-500">11 online</span>
+    </motion.div>
+  );
+}
 
-        {/* 1 — Active Agents */}
-        <motion.div
-          variants={pill}
-          className="flex items-center gap-2.5 px-3.5 py-2 rounded-full glass-pill flex-shrink-0 whitespace-nowrap"
-          style={{ ...glassBase, border: '1px solid rgba(52,211,153,0.18)' }}
-        >
-          <Bot className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          <span className="text-xs text-slate-400">Agents</span>
-          <span className="text-sm font-bold text-emerald-400">9</span>
-          <span className="text-xs text-slate-600">/</span>
-          <span className="text-xs text-slate-500">11 online</span>
-        </motion.div>
+function MetricBurn() {
+  return (
+    <motion.div
+      variants={pill}
+      className="flex items-center gap-2.5 px-3.5 py-2 rounded-full glass-pill flex-shrink-0 whitespace-nowrap"
+      style={glassBase}
+    >
+      <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+      <span className="text-xs text-slate-400">Burn</span>
+      <span className="text-sm font-bold text-amber-400">$2.4K</span>
+      <div className="flex items-end gap-0.5 ml-1">
+        {burnBars.map((h, i) => (
+          <div
+            key={i}
+            className="w-[3px] rounded-full pulse-bar"
+            style={{ height: `${h * 2}px`, background: i >= burnBars.length - 3 ? 'rgba(245,158,11,0.75)' : 'rgba(245,158,11,0.25)' }}
+          />
+        ))}
+      </div>
+      <span className="text-[10px] text-slate-500 ml-0.5">today</span>
+    </motion.div>
+  );
+}
 
-        {/* 2 — Daily Burn Rate */}
-        <motion.div
-          variants={pill}
-          className="flex items-center gap-2.5 px-3.5 py-2 rounded-full glass-pill flex-shrink-0 whitespace-nowrap"
-          style={glassBase}
-        >
-          <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <span className="text-xs text-slate-400">Burn</span>
-          <span className="text-sm font-bold text-amber-400">$2.4K</span>
-          <div className="flex items-end gap-0.5 ml-1">
-            {burnBars.map((h, i) => (
-              <div
-                key={i}
-                className="w-[3px] rounded-full pulse-bar"
-                style={{ height: `${h * 2}px`, background: i >= burnBars.length - 3 ? 'rgba(245,158,11,0.75)' : 'rgba(245,158,11,0.25)' }}
-              />
-            ))}
-          </div>
-          <span className="text-[10px] text-slate-500 ml-0.5">today</span>
-        </motion.div>
+function MetricTasks() {
+  return (
+    <motion.div
+      variants={pill}
+      className="flex items-center gap-2.5 px-3.5 py-2 rounded-full glass-pill flex-shrink-0 whitespace-nowrap"
+      style={glassBase}
+    >
+      <CheckSquare className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+      <span className="text-xs text-slate-400">Tasks done</span>
+      <AnimatedNumber value={47} className="text-sm font-bold text-sky-400" />
+    </motion.div>
+  );
+}
 
-        {/* 3 — Tasks Completed Today */}
-        <motion.div
-          variants={pill}
-          className="flex items-center gap-2.5 px-3.5 py-2 rounded-full glass-pill flex-shrink-0 whitespace-nowrap"
-          style={glassBase}
-        >
-          <CheckSquare className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-          <span className="text-xs text-slate-400">Tasks done</span>
-          <AnimatedNumber value={47} className="text-sm font-bold text-sky-400" />
-        </motion.div>
+function MetricDeliverables() {
+  return (
+    <motion.div
+      variants={pill}
+      className="flex items-center gap-2.5 px-3.5 py-2 rounded-full glass-pill flex-shrink-0 whitespace-nowrap"
+      style={glassBase}
+    >
+      <FileOutput className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+      <span className="text-xs text-slate-400">Deliverables</span>
+      <AnimatedNumber value={12} className="text-sm font-bold text-violet-400" />
+      <span className="text-[10px] text-slate-500">today</span>
+    </motion.div>
+  );
+}
 
-        {/* 4 — Deliverables Produced */}
-        <motion.div
-          variants={pill}
-          className="flex items-center gap-2.5 px-3.5 py-2 rounded-full glass-pill flex-shrink-0 whitespace-nowrap"
-          style={glassBase}
-        >
-          <FileOutput className="w-3.5 h-3.5 text-violet-400 shrink-0" />
-          <span className="text-xs text-slate-400">Deliverables</span>
-          <AnimatedNumber value={12} className="text-sm font-bold text-violet-400" />
-          <span className="text-[10px] text-slate-500">today</span>
-        </motion.div>
+function MetricUptime() {
+  return (
+    <motion.div
+      variants={pill}
+      className="flex items-center gap-2.5 px-3.5 py-2 rounded-full glass-pill flex-shrink-0 whitespace-nowrap"
+      style={{ ...glassBase, border: '1px solid rgba(52,211,153,0.12)' }}
+    >
+      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+      <span className="text-xs text-slate-400">Uptime</span>
+      <span className="text-sm font-bold text-emerald-400">99.8%</span>
+    </motion.div>
+  );
+}
 
-        {/* 5 — System Uptime */}
-        <motion.div
-          variants={pill}
-          className="flex items-center gap-2.5 px-3.5 py-2 rounded-full glass-pill flex-shrink-0 whitespace-nowrap"
-          style={{ ...glassBase, border: '1px solid rgba(52,211,153,0.12)' }}
-        >
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          <span className="text-xs text-slate-400">Uptime</span>
-          <span className="text-sm font-bold text-emerald-400">99.8%</span>
-        </motion.div>
+function MetricSync() {
+  return (
+    <motion.div
+      variants={pill}
+      className="flex items-center gap-2 px-3.5 py-2 rounded-full glass-pill flex-shrink-0 whitespace-nowrap"
+      style={{ ...glassBase, border: '1px solid rgba(255,255,255,0.07)' }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 live-dot shrink-0" />
+      <RefreshCw className="w-3 h-3 text-slate-500 shrink-0" />
+      <span className="text-xs text-slate-500">Synced</span>
+      <LiveSyncBadge />
+    </motion.div>
+  );
+}
 
-        {/* 6 — Last Synced */}
-        <motion.div
-          variants={pill}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-full glass-pill flex-shrink-0 whitespace-nowrap ml-auto"
-          style={{ ...glassBase, border: '1px solid rgba(255,255,255,0.07)' }}
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 live-dot shrink-0" />
-          <RefreshCw className="w-3 h-3 text-slate-500 shrink-0" />
-          <span className="text-xs text-slate-500">Synced</span>
-          <LiveSyncBadge />
+const METRIC_COMPONENTS: Record<string, React.FC> = {
+  agents:       MetricAgents,
+  burn:         MetricBurn,
+  tasks:        MetricTasks,
+  deliverables: MetricDeliverables,
+  uptime:       MetricUptime,
+  sync:         MetricSync,
+};
+
+// ─── STATUS BAR ──────────────────────────────────────────────────────────────
+
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
+};
+
+export default function StatusBar() {
+  const { statusBarMetrics, layoutPreset } = useSettings();
+
+  // Deep Work hides the status bar entirely
+  if (layoutPreset === 'deep-work') return null;
+
+  const visibleMetrics = statusBarMetrics.filter((m) => m.visible);
+
+  return (
+    <motion.div variants={container} initial="hidden" animate="show" className="px-4 py-2 relative z-10">
+      <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+
+        {visibleMetrics.map((m) => {
+          const Component = METRIC_COMPONENTS[m.id];
+          if (!Component) return null;
+          return <Component key={m.id} />;
+        })}
+
+        {/* Customize shortcut — always last */}
+        <motion.div variants={pill} className="ml-auto shrink-0">
+          <Link href="/settings">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-medium text-slate-600 hover:text-slate-400 transition-colors cursor-pointer"
+              style={{ ...glassBase, border: '1px solid rgba(255,255,255,0.06)' }}
+              title="Customize StatusBar"
+            >
+              <SlidersHorizontal size={11} />
+              Customize
+            </motion.button>
+          </Link>
         </motion.div>
 
       </div>

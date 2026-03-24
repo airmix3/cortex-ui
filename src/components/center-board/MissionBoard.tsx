@@ -6,7 +6,7 @@ import { missions as allMissions } from '@/data/mock-data';
 import { Shield, ScanEye, CheckCircle2 } from 'lucide-react';
 import MissionColumn from './MissionColumn';
 
-export default function MissionBoard() {
+export default function MissionBoard({ focusMode }: { focusMode?: boolean }) {
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [decisionsToday, setDecisionsToday] = useState(0);
 
@@ -16,9 +16,20 @@ export default function MissionBoard() {
   }
 
   const visible = allMissions.filter((m) => !completedIds.includes(m.id));
-  const actNow = visible.filter((m) => m.column === 'act-now');
-  const approveDecide = visible.filter((m) => m.column === 'approve-decide');
-  const review = visible.filter((m) => m.column === 'review');
+  // Focus mode: only show the single most critical mission across all columns
+  const focusVisible = focusMode
+    ? visible
+        .slice()
+        .sort((a, b) => {
+          const order = { critical: 0, high: 1, medium: 2, low: 3 };
+          return order[a.priority] - order[b.priority];
+        })
+        .slice(0, 1)
+    : visible;
+
+  const actNow = focusVisible.filter((m) => m.column === 'act-now');
+  const approveDecide = focusVisible.filter((m) => m.column === 'approve-decide');
+  const review = focusVisible.filter((m) => m.column === 'review');
   const totalPending = actNow.length + approveDecide.length;
 
   return (

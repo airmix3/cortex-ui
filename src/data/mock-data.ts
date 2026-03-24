@@ -32,6 +32,8 @@ export const missions: Mission[] = [
     attempts: 3,
     blocker: 'No GPU available in current AZ',
     age: '3h',
+    linkedEscalationId: 'e1',
+    linkedEscalationLevel: 'L4',
   },
   {
     id: 'm2',
@@ -70,6 +72,8 @@ export const missions: Mission[] = [
     primaryCTA: 'Review Q2 Plans',
     escalationPath: 'Content Pipeline | Marketing > CMO > Tamir > CEO',
     age: '4h',
+    linkedEscalationId: 'e3',
+    linkedEscalationLevel: 'L2',
   },
   {
     id: 'm4',
@@ -88,6 +92,8 @@ export const missions: Mission[] = [
     primaryCTA: 'Unblock ZUNA',
     escalationPath: 'Deploy Pipeline | Dev > DevOps > CTO > Tamir > CEO',
     age: '45m',
+    linkedEscalationId: 'e1',
+    linkedEscalationLevel: 'L4',
   },
   {
     id: 'm5',

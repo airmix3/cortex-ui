@@ -1,7 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import PageShell from '@/components/shared/PageShell';
+import AgentPill from '@/components/shared/AgentPill';
+import ContextThread from '@/components/shared/ContextThread';
+import { useSettings, escalationPassesThreshold } from '@/contexts/SettingsContext';
 import { escalations } from '@/data/pages-data';
 import type { Escalation, Person } from '@/types';
 import { motion } from 'motion/react';
@@ -17,6 +21,7 @@ import {
   Shield,
   Flame,
   CircleDot,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 // ─── Helpers ───
@@ -45,19 +50,12 @@ type LevelFilter = 'all' | Escalation['level'];
 
 // ─── Components ───
 
-function AvatarChain({ chain }: { chain: Person[] }) {
+function AgentPillChain({ chain }: { chain: Person[] }) {
   return (
     <div className="flex items-center gap-1 flex-wrap">
       {chain.map((person, i) => (
         <div key={i} className="flex items-center gap-1">
-          <div className="flex items-center gap-1.5">
-            <div
-              className={`w-7 h-7 rounded-full ${person.color} flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-white/10`}
-            >
-              {person.avatar}
-            </div>
-            <span className="text-xs text-slate-400">{person.name}</span>
-          </div>
+          <AgentPill person={person} size="md" showName={true} />
           {i < chain.length - 1 && (
             <ChevronRight className="w-3.5 h-3.5 text-slate-600 mx-0.5 flex-shrink-0" />
           )}
@@ -124,18 +122,14 @@ function EscalationCard({ esc, index }: { esc: Escalation; index: number }) {
         {/* Escalation Chain */}
         <div>
           <SectionLabel>Escalation Chain</SectionLabel>
-          <AvatarChain chain={esc.chain} />
+          <AgentPillChain chain={esc.chain} />
         </div>
 
         {/* Originated by */}
         <div>
           <SectionLabel>Originated by</SectionLabel>
           <div className="flex items-center gap-2">
-            <div
-              className={`w-6 h-6 rounded-full ${esc.originatedBy.color} flex items-center justify-center text-[9px] font-bold text-white`}
-            >
-              {esc.originatedBy.avatar}
-            </div>
+            <AgentPill person={esc.originatedBy} size="md" showName={false} />
             <span className="text-sm text-slate-300">
               {esc.originatedBy.name}{' '}
               <span className="text-slate-500">/ {esc.originatedBy.role}</span>
@@ -185,6 +179,9 @@ function EscalationCard({ esc, index }: { esc: Escalation; index: number }) {
           <p className="text-sm text-rose-400 leading-relaxed">{esc.impactIfIgnored}</p>
         </div>
 
+        {/* Context thread — pull thread to see mission → agents → skill gap → impact */}
+        <ContextThread escalation={esc} />
+
         {/* Footer: actions + timestamp */}
         <div className="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] flex-wrap gap-3">
           <div className="flex items-center gap-2 flex-wrap">
@@ -220,10 +217,13 @@ function EscalationCard({ esc, index }: { esc: Escalation; index: number }) {
 export default function EscalationsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [levelFilter, setLevelFilter] = useState<LevelFilter>('all');
+  const { escalationThreshold } = useSettings();
+  const thresholdActive = escalationThreshold !== 'L1';
 
   const filtered = escalations.filter((e) => {
     if (statusFilter !== 'all' && e.status !== statusFilter) return false;
     if (levelFilter !== 'all' && e.level !== levelFilter) return false;
+    if (!escalationPassesThreshold(e.level, escalationThreshold)) return false;
     return true;
   });
 
@@ -289,6 +289,29 @@ export default function EscalationsPage() {
             <span className="text-sm font-semibold text-white">{waitingCount}</span>
           </div>
         </motion.div>
+
+        {/* Threshold banner */}
+        {thresholdActive && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl"
+            style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)' }}
+          >
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal size={12} className="text-amber-400 shrink-0" />
+              <span className="text-[12px] text-amber-300/90">
+                Threshold active: showing <strong>{escalationThreshold}+</strong> escalations only.{' '}
+                {escalations.length - filtered.length} lower-level escalation{escalations.length - filtered.length !== 1 ? 's' : ''} hidden.
+              </span>
+            </div>
+            <Link href="/settings">
+              <span className="text-[11px] text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 shrink-0 cursor-pointer">
+                Change in Settings →
+              </span>
+            </Link>
+          </motion.div>
+        )}
 
         {/* Filter Bar */}
         <motion.div

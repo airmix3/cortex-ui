@@ -2,9 +2,11 @@
 
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
+import Link from 'next/link';
 import { Mission } from '@/types';
-import { Zap, ChevronDown, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Zap, ChevronDown, ChevronRight, CheckCircle2, AlertTriangle, ExternalLink } from 'lucide-react';
 import DeliverableChip from './DeliverableChip';
+import AgentPill from '@/components/shared/AgentPill';
 
 const flowStages = ['Created', 'Agent Work', 'Dept Review', 'CEO Review', 'Done'];
 const priorityBorder: Record<string, string> = {
@@ -115,15 +117,36 @@ export default function MissionCard({
       {/* ── ZONE 1: WHAT ── */}
       <div className="flex items-start justify-between mb-2">
         <h4 className="text-[13px] font-bold text-white leading-tight">{mission.title}</h4>
-        <span
-          className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ml-2 ${mission.priority === 'critical' ? 'priority-pulse' : ''}`}
-          style={{
-            background: priorityBadge[mission.priority].bg,
-            color: priorityBadge[mission.priority].text,
-          }}
-        >
-          {mission.priority}
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0 ml-2">
+          {/* L4 escalation badge */}
+          {mission.linkedEscalationId && (
+            <Link href="/escalations" onClick={(e) => e.stopPropagation()}>
+              <motion.span
+                className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold cursor-pointer"
+                style={{
+                  background: 'rgba(244,63,94,0.12)',
+                  border: '1px solid rgba(244,63,94,0.25)',
+                  color: '#fca5a5',
+                }}
+                animate={{ opacity: [0.8, 1, 0.8] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                title="Active escalation blocking this mission"
+              >
+                <AlertTriangle size={8} />
+                {mission.linkedEscalationLevel ?? 'ESC'}
+              </motion.span>
+            </Link>
+          )}
+          <span
+            className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${mission.priority === 'critical' ? 'priority-pulse' : ''}`}
+            style={{
+              background: priorityBadge[mission.priority].bg,
+              color: priorityBadge[mission.priority].text,
+            }}
+          >
+            {mission.priority}
+          </span>
+        </div>
       </div>
 
       {/* ── ZONE 2: WHY ── */}
@@ -282,26 +305,37 @@ export default function MissionCard({
                 </div>
               </div>
 
-              {/* Touch trail */}
-              <div className="flex items-center gap-1">
-                {mission.touchTrail.map((person, i) => (
-                  <div key={i} className="flex items-center gap-0.5">
-                    <div
-                      className={`w-5 h-5 rounded-full ${person.color} flex items-center justify-center text-[9px] font-bold text-white ${
-                        i === mission.touchTrail.length - 1 ? 'ring-2 ring-amber-400/60' : 'opacity-60'
-                      }`}
-                      title={`${person.name} (${person.role})`}
-                    >
-                      {person.avatar}
+              {/* Touch trail — agent chain with hover cards */}
+              <div>
+                <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                  Agent Chain
+                </div>
+                <div className="flex items-center gap-1 flex-wrap">
+                  {mission.touchTrail.map((person, i) => (
+                    <div key={i} className="flex items-center gap-0.5">
+                      <div className={i === mission.touchTrail.length - 1 ? 'ring-1 ring-amber-400/50 rounded-full' : 'opacity-70'}>
+                        <AgentPill person={person} size="sm" showName={true} />
+                      </div>
+                      {i < mission.touchTrail.length - 1 && (
+                        <ChevronRight className="w-2.5 h-2.5 text-slate-600" />
+                      )}
                     </div>
-                    {i < mission.touchTrail.length - 1 && (
-                      <ChevronRight className="w-2.5 h-2.5 text-slate-600" />
-                    )}
-                  </div>
-                ))}
-                <span className="text-[10px] text-slate-500 ml-2">
-                  Owner: <span className="text-slate-300">{mission.owner.name}</span>
-                </span>
+                  ))}
+                </div>
+                {mission.linkedEscalationId && (
+                  <Link href="/escalations" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-lg cursor-pointer hover:brightness-110 transition-all w-fit"
+                      style={{ background: 'rgba(244,63,94,0.07)', border: '1px solid rgba(244,63,94,0.15)' }}
+                    >
+                      <AlertTriangle size={10} className="text-rose-400" />
+                      <span className="text-[10px] text-rose-300">
+                        Active {mission.linkedEscalationLevel} escalation blocking this mission
+                      </span>
+                      <ExternalLink size={9} className="text-rose-400/60" />
+                    </div>
+                  </Link>
+                )}
               </div>
 
               {/* Secondary actions */}
